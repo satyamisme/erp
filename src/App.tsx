@@ -13,12 +13,16 @@ import { Customer360 } from './pages/Customer360';
 import { InterStoreTransfer } from './pages/InterStoreTransfer';
 import { GovernanceSecurity } from './pages/GovernanceSecurity';
 import { SystemHealth } from './pages/SystemHealth';
+import { ZReportFinanceDashboard } from './pages/ZReportFinanceDashboard';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<SecureLogin />} />
+
+        {/* Isolated routes for screens that define their own sidebars / layouts */}
+        <Route path="/finance" element={<ZReportFinanceDashboard />} />
 
         {/* Main App Layout Routes */}
         <Route path="/" element={<Layout />}>
