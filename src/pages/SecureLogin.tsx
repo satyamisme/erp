@@ -1,5 +1,43 @@
 
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+
 export function SecureLogin() {
+  const [operatorId, setOperatorId] = useState('');
+  const [accessKey, setAccessKey] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ operatorId, accessKey }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Authentication failed');
+      }
+
+      // Store token and redirect
+      localStorage.setItem('terminal_token', data.token);
+      localStorage.setItem('terminal_user', JSON.stringify(data.user));
+      navigate('/pos');
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="bg-surface min-h-screen flex flex-col items-center justify-center p-6 overflow-hidden relative selection:bg-primary-fixed selection:text-on-primary-fixed">
       {/* Background Decoration: Precision Asymmetry */}
@@ -35,7 +73,7 @@ export function SecureLogin() {
             <p className="text-sm text-on-surface-variant">Initialize secure session via Terminal OS protocol.</p>
           </div>
 
-          <form className="flex flex-col gap-6" onSubmit={(e) => e.preventDefault()}>
+          <form className="flex flex-col gap-6" onSubmit={handleLogin}>
 
             {/* Input Group: Operator ID */}
             <div className="space-y-1.5">
@@ -44,7 +82,10 @@ export function SecureLogin() {
                 <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors text-xl">person</span>
                 <input
                   type="text"
+                  value={operatorId}
+                  onChange={(e) => setOperatorId(e.target.value)}
                   placeholder="LKT-7728-EX"
+                  required
                   className="w-full bg-surface-container-low hover:bg-surface-container-high focus:bg-surface-container-lowest border-none ring-1 ring-outline-variant/20 focus:ring-2 focus:ring-primary/40 rounded-xl py-3.5 pl-12 pr-4 text-on-surface placeholder:text-outline/50 transition-all outline-none text-sm"
                 />
               </div>
@@ -60,11 +101,20 @@ export function SecureLogin() {
                 <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors text-xl">key</span>
                 <input
                   type="password"
+                  value={accessKey}
+                  onChange={(e) => setAccessKey(e.target.value)}
                   placeholder="••••••••••••"
+                  required
                   className="w-full bg-surface-container-low hover:bg-surface-container-high focus:bg-surface-container-lowest border-none ring-1 ring-outline-variant/20 focus:ring-2 focus:ring-primary/40 rounded-xl py-3.5 pl-12 pr-4 text-on-surface placeholder:text-outline/50 transition-all outline-none text-sm font-mono tracking-widest"
                 />
               </div>
             </div>
+
+            {error && (
+              <div className="text-error text-xs font-bold bg-error-container/20 p-3 rounded-lg border border-error/20">
+                {error}
+              </div>
+            )}
 
             {/* 2FA Prompt */}
             <div className="bg-surface-container-low/50 p-4 rounded-lg flex items-start gap-4 border-l-2 border-primary-container mt-2">
@@ -78,9 +128,10 @@ export function SecureLogin() {
             {/* Action Button */}
             <button
               type="submit"
-              className="w-full bg-gradient-to-b from-primary to-primary-container text-on-primary font-bold py-4 rounded-xl shadow-lg shadow-primary/20 active:scale-[0.98] transition-transform flex items-center justify-center gap-2 group mt-2 hover:opacity-90"
+              disabled={isLoading}
+              className="w-full bg-gradient-to-b from-primary to-primary-container text-on-primary font-bold py-4 rounded-xl shadow-lg shadow-primary/20 active:scale-[0.98] transition-transform flex items-center justify-center gap-2 group mt-2 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <span className="tracking-widest text-sm">INITIALIZE COCKPIT</span>
+              <span className="tracking-widest text-sm">{isLoading ? 'AUTHENTICATING...' : 'INITIALIZE COCKPIT'}</span>
               <span className="material-symbols-outlined text-xl group-hover:translate-x-1 transition-transform">arrow_forward</span>
             </button>
           </form>
