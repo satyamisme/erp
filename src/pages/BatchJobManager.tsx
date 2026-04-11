@@ -1,5 +1,18 @@
 
+import { useState, useEffect } from 'react';
+
 export function BatchJobManager() {
+  const [data, setData] = useState<any>(null);
+
+  useEffect(() => {
+    fetch('/api/dashboard/jobs')
+      .then(res => res.json())
+      .then(data => setData(data))
+      .catch(console.error);
+  }, []);
+
+  if (!data) return <div className="p-8 text-center text-slate-500">Loading Batch Jobs...</div>;
+
   return (
     <div className="p-6 flex-1 bg-surface-container-low h-full">
       {/* Page Header */}
@@ -32,7 +45,7 @@ export function BatchJobManager() {
             <span className="material-symbols-outlined text-secondary text-lg">speed</span>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-primary">1,240</span>
+            <span className="text-3xl font-black text-primary">{data.throughput}</span>
             <span className="text-xs font-bold text-secondary">rows/sec</span>
           </div>
           <div className="mt-2 h-1 bg-slate-100 rounded-full overflow-hidden">
@@ -46,7 +59,7 @@ export function BatchJobManager() {
             <span className="material-symbols-outlined text-error text-lg">error</span>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-on-surface">0.04</span>
+            <span className="text-3xl font-black text-on-surface">{data.errorRate}</span>
             <span className="text-xs font-bold text-slate-400">%</span>
           </div>
           <p className="text-[10px] text-secondary mt-2 flex items-center gap-1">
@@ -61,7 +74,7 @@ export function BatchJobManager() {
             <span className="material-symbols-outlined text-primary text-lg">timer</span>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-on-surface">14</span>
+            <span className="text-3xl font-black text-on-surface">{data.latency}</span>
             <span className="text-xs font-bold text-slate-400">ms</span>
           </div>
           <p className="text-[10px] text-slate-400 mt-2">Optimal system response</p>
@@ -73,7 +86,7 @@ export function BatchJobManager() {
               <span className="text-[10px] uppercase font-bold text-blue-200 tracking-wider">System Status</span>
               <span className="material-symbols-outlined text-blue-300 animate-pulse">sensors</span>
             </div>
-            <div className="text-3xl font-black">STABLE</div>
+            <div className="text-3xl font-black">{data.status}</div>
             <p className="text-[10px] text-blue-200 mt-2">Node 01-A Active</p>
           </div>
           <div className="absolute right-[-10%] bottom-[-20%] text-blue-800 opacity-20 transform group-hover:scale-110 transition-transform">
@@ -85,68 +98,27 @@ export function BatchJobManager() {
       {/* Active Processing Cards */}
       <h3 className="text-[11px] uppercase font-bold text-slate-500 tracking-widest mb-4">Active Processing Cards</h3>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        {/* Bulk IMEI */}
-        <div className="bg-white/60 backdrop-blur-md p-5 rounded-xl border border-outline-variant/20 shadow-sm">
-          <div className="flex justify-between items-start mb-4">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <span className="material-symbols-outlined text-primary">barcode_reader</span>
+        {data.activeJobs.map((job: any, i: number) => (
+          <div key={i} className="bg-white/60 backdrop-blur-md p-5 rounded-xl border border-outline-variant/20 shadow-sm">
+            <div className="flex justify-between items-start mb-4">
+              <div className={`p-2 rounded-lg ${i === 0 ? 'bg-primary/10' : i === 1 ? 'bg-secondary/10' : 'bg-tertiary/10'}`}>
+                <span className={`material-symbols-outlined ${i === 0 ? 'text-primary' : i === 1 ? 'text-secondary' : 'text-tertiary'}`}>{i === 0 ? 'barcode_reader' : i === 1 ? 'print' : 'account_balance'}</span>
+              </div>
+              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${i === 2 ? 'bg-tertiary-fixed text-on-tertiary-fixed-variant' : 'bg-secondary-container text-on-secondary-container'}`}>{i === 0 ? 'Processing' : i === 1 ? 'Spooling' : 'Parsing'}</span>
             </div>
-            <span className="px-2 py-0.5 bg-secondary-container text-on-secondary-container rounded text-[10px] font-bold uppercase">Processing</span>
-          </div>
-          <h4 className="font-bold text-primary text-lg mb-1">Bulk IMEI Import</h4>
-          <p className="text-xs text-on-surface-variant mb-6">Importing 50k serials to Warehouse-B</p>
-          <div className="space-y-2">
-            <div className="flex justify-between text-[11px] font-bold text-primary">
-              <span>74% Complete</span>
-              <span>37,000 / 50,000</span>
-            </div>
-            <div className="h-2 w-full bg-surface-container-high rounded-full overflow-hidden">
-              <div className="h-full bg-primary w-3/4 rounded-full"></div>
-            </div>
-          </div>
-        </div>
-
-        {/* Label Spooler */}
-        <div className="bg-white/60 backdrop-blur-md p-5 rounded-xl border border-outline-variant/20 shadow-sm">
-          <div className="flex justify-between items-start mb-4">
-            <div className="p-2 bg-secondary/10 rounded-lg">
-              <span className="material-symbols-outlined text-secondary">print</span>
-            </div>
-            <span className="px-2 py-0.5 bg-secondary-container text-on-secondary-container rounded text-[10px] font-bold uppercase">Spooling</span>
-          </div>
-          <h4 className="font-bold text-primary text-lg mb-1">ZPL Label Spooler</h4>
-          <p className="text-xs text-on-surface-variant mb-6">Thermal dispatch queue: Shipping-East</p>
-          <div className="space-y-2">
-            <div className="flex justify-between text-[11px] font-bold text-primary">
-              <span>42% Complete</span>
-              <span>420 / 1,000</span>
-            </div>
-            <div className="h-2 w-full bg-surface-container-high rounded-full overflow-hidden">
-              <div className="h-full bg-secondary w-[42%] rounded-full"></div>
+            <h4 className="font-bold text-primary text-lg mb-1">{job.title}</h4>
+            <p className="text-xs text-on-surface-variant mb-6">{job.desc}</p>
+            <div className="space-y-2">
+              <div className="flex justify-between text-[11px] font-bold text-primary">
+                <span>{job.progress} Complete</span>
+                <span>{job.text}</span>
+              </div>
+              <div className="h-2 w-full bg-surface-container-high rounded-full overflow-hidden">
+                <div className={`h-full rounded-full ${i === 0 ? 'bg-primary' : i === 1 ? 'bg-secondary' : 'bg-tertiary'}`} style={{ width: job.progress }}></div>
+              </div>
             </div>
           </div>
-        </div>
-
-        {/* Financial Export */}
-        <div className="bg-white/60 backdrop-blur-md p-5 rounded-xl border border-outline-variant/20 shadow-sm">
-          <div className="flex justify-between items-start mb-4">
-            <div className="p-2 bg-tertiary/10 rounded-lg">
-              <span className="material-symbols-outlined text-tertiary">account_balance</span>
-            </div>
-            <span className="px-2 py-0.5 bg-tertiary-fixed text-on-tertiary-fixed-variant rounded text-[10px] font-bold uppercase">Parsing</span>
-          </div>
-          <h4 className="font-bold text-primary text-lg mb-1">Monthly Financial Export</h4>
-          <p className="text-xs text-on-surface-variant mb-6">Generating reconciliation XLSX for Q3</p>
-          <div className="space-y-2">
-            <div className="flex justify-between text-[11px] font-bold text-primary">
-              <span>15% Complete</span>
-              <span>2 / 12 Months</span>
-            </div>
-            <div className="h-2 w-full bg-surface-container-high rounded-full overflow-hidden">
-              <div className="h-full bg-tertiary w-[15%] rounded-full"></div>
-            </div>
-          </div>
-        </div>
+        ))}
       </div>
 
       {/* Job Queue Table */}
@@ -181,48 +153,28 @@ export function BatchJobManager() {
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-container-high">
-              {/* Row 1 */}
-              <tr className="hover:bg-surface-container-low transition-colors group">
-                <td className="px-6 py-3 text-xs font-mono font-bold text-primary">#JOB-8821</td>
-                <td className="px-6 py-3">
-                  <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-sm text-slate-400">table_chart</span>
-                    <span className="text-xs font-medium text-on-surface">Inventory Sync (Full)</span>
-                  </div>
-                </td>
-                <td className="px-6 py-3">
-                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-secondary-container text-on-secondary-container">
-                    <span className="w-1.5 h-1.5 bg-secondary rounded-full"></span> SUCCESS
-                  </span>
-                </td>
-                <td className="px-6 py-3 text-xs text-on-surface-variant">Admin_K_Chen</td>
-                <td className="px-6 py-3 text-xs text-on-surface-variant">14:02:11</td>
-                <td className="px-6 py-3 text-xs text-on-surface-variant">12.4s</td>
-                <td className="px-6 py-3 text-right">
-                  <button className="material-symbols-outlined text-slate-400 hover:text-primary transition-colors text-lg">more_vert</button>
-                </td>
-              </tr>
-              {/* Row 2 */}
-              <tr className="hover:bg-surface-container-low transition-colors group">
-                <td className="px-6 py-3 text-xs font-mono font-bold text-primary">#JOB-8820</td>
-                <td className="px-6 py-3">
-                  <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-sm text-slate-400">cloud_download</span>
-                    <span className="text-xs font-medium text-on-surface">External API Polling</span>
-                  </div>
-                </td>
-                <td className="px-6 py-3">
-                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700">
-                    <span className="w-1.5 h-1.5 bg-blue-700 rounded-full animate-pulse"></span> RUNNING
-                  </span>
-                </td>
-                <td className="px-6 py-3 text-xs text-on-surface-variant">System_Auto</td>
-                <td className="px-6 py-3 text-xs text-on-surface-variant">14:05:00</td>
-                <td className="px-6 py-3 text-xs text-on-surface-variant">--</td>
-                <td className="px-6 py-3 text-right">
-                  <button className="material-symbols-outlined text-slate-400 hover:text-primary transition-colors text-lg">more_vert</button>
-                </td>
-              </tr>
+              {data.history.map((job: any, i: number) => (
+                <tr key={i} className="hover:bg-surface-container-low transition-colors group">
+                  <td className="px-6 py-3 text-xs font-mono font-bold text-primary">{job.id}</td>
+                  <td className="px-6 py-3">
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-sm text-slate-400">{job.status === 'SUCCESS' ? 'table_chart' : job.status === 'RUNNING' ? 'cloud_download' : job.status === 'QUEUED' ? 'description' : 'database'}</span>
+                      <span className="text-xs font-medium text-on-surface">{job.type}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-3">
+                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold ${job.status === 'SUCCESS' ? 'bg-secondary-container text-on-secondary-container' : job.status === 'RUNNING' ? 'bg-blue-100 text-blue-700' : job.status === 'FAILED' ? 'bg-error-container text-on-error-container' : 'bg-surface-container-high text-slate-500'}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${job.status === 'SUCCESS' ? 'bg-secondary' : job.status === 'RUNNING' ? 'bg-blue-700 animate-pulse' : job.status === 'FAILED' ? 'bg-error' : 'bg-slate-400'}`}></span> {job.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-3 text-xs text-on-surface-variant">{job.operator}</td>
+                  <td className="px-6 py-3 text-xs text-on-surface-variant">{job.time}</td>
+                  <td className="px-6 py-3 text-xs text-on-surface-variant">{job.duration}</td>
+                  <td className="px-6 py-3 text-right">
+                    <button className="material-symbols-outlined text-slate-400 hover:text-primary transition-colors text-lg">more_vert</button>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>

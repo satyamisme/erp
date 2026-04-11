@@ -1,5 +1,18 @@
 
+import { useState, useEffect } from 'react';
+
 export function InventoryMatrix() {
+  const [data, setData] = useState<any>(null);
+
+  useEffect(() => {
+    fetch('/api/dashboard/inventory')
+      .then(res => res.json())
+      .then(data => setData(data))
+      .catch(console.error);
+  }, []);
+
+  if (!data) return <div className="p-8 text-center text-slate-500">Loading Inventory Matrix...</div>;
+
   return (
     <div className="p-8 space-y-8 h-full bg-surface-container-low">
       {/* Executive Summary Row */}
@@ -8,7 +21,7 @@ export function InventoryMatrix() {
         <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm border-t border-primary/20 flex flex-col justify-between">
           <div>
             <p className="text-[11px] uppercase tracking-wider text-slate-500 font-bold mb-1">Transit Assets (Global)</p>
-            <h2 className="text-3xl font-black text-primary tracking-tight">$42,840.00</h2>
+            <h2 className="text-3xl font-black text-primary tracking-tight">{data.transitAssets}</h2>
           </div>
           <div className="mt-4 flex items-center text-secondary text-xs font-bold">
             <span className="material-symbols-outlined text-sm mr-1">trending_up</span>
@@ -20,7 +33,7 @@ export function InventoryMatrix() {
         <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm border-t border-error/20 flex flex-col justify-between">
           <div>
             <p className="text-[11px] uppercase tracking-wider text-slate-500 font-bold mb-1">Predictive Re-orders</p>
-            <h2 className="text-3xl font-black text-error tracking-tight">8 Triggers</h2>
+            <h2 className="text-3xl font-black text-error tracking-tight">{data.reorderTriggers} Triggers</h2>
           </div>
           <div className="mt-4 flex items-center text-slate-400 text-xs">
             <span className="material-symbols-outlined text-sm mr-1">schedule</span>
@@ -34,7 +47,7 @@ export function InventoryMatrix() {
             <p className="text-[11px] uppercase tracking-wider text-on-primary-container font-bold mb-1">Global Stock Distribution</p>
             <div className="flex items-end gap-6 mt-2">
               <div>
-                <h3 className="text-4xl font-black tracking-tighter">84.2%</h3>
+                <h3 className="text-4xl font-black tracking-tighter">{data.optimizationScore}</h3>
                 <p className="text-[10px] text-on-primary-container/80 uppercase">Optimization Score</p>
               </div>
               <div className="flex-1 flex items-center gap-2 pb-2">
@@ -84,78 +97,43 @@ export function InventoryMatrix() {
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-container-high">
-              {/* Row 1 */}
-              <tr className="hover:bg-surface-container-low transition-colors group">
-                <td className="px-6 py-4">
-                  <div className="flex flex-col">
-                    <span className="text-sm font-bold text-primary">LT-8821-XP</span>
-                    <span className="text-[10px] text-slate-400">Tactical Grade Fiber</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-black text-slate-700">1,240</span>
-                    <div className="flex-1 h-1.5 bg-slate-100 rounded-full w-24">
-                      <div className="h-full bg-error rounded-full" style={{ width: '15%' }}></div>
+              {data.items.map((item: any, i: number) => (
+                <tr key={i} className="hover:bg-surface-container-low transition-colors group">
+                  <td className="px-6 py-4">
+                    <div className="flex flex-col">
+                      <span className="text-sm font-bold text-primary">{item.sku}</span>
+                      <span className="text-[10px] text-slate-400">{item.name}</span>
                     </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-center">
-                  <span className="text-sm font-medium text-slate-600">1,100</span>
-                </td>
-                <td className="px-6 py-4 text-center">
-                  <span className="text-sm font-medium text-error font-bold">140</span>
-                </td>
-                <td className="px-6 py-4">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-error-container text-on-error-container uppercase">Low Stock Trigger</span>
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <div className="flex justify-end gap-2">
-                    <button className="p-2 text-slate-400 hover:text-primary transition-colors hover:bg-primary/5 rounded">
-                      <span className="material-symbols-outlined text-lg">swap_horiz</span>
-                    </button>
-                    <button className="p-2 text-slate-400 hover:text-primary transition-colors hover:bg-primary/5 rounded">
-                      <span className="material-symbols-outlined text-lg">edit</span>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-              {/* Row 2 */}
-              <tr className="hover:bg-surface-container-low transition-colors group">
-                <td className="px-6 py-4">
-                  <div className="flex flex-col">
-                    <span className="text-sm font-bold text-primary">MK-4490-QU</span>
-                    <span className="text-[10px] text-slate-400">Core Logic Processors</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-black text-slate-700">4,812</span>
-                    <div className="flex-1 h-1.5 bg-slate-100 rounded-full w-24">
-                      <div className="h-full bg-secondary rounded-full" style={{ width: '88%' }}></div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-black text-slate-700">{item.total}</span>
+                      <div className="flex-1 h-1.5 bg-slate-100 rounded-full w-24">
+                        <div className={`h-full rounded-full ${item.status.includes('Optimal') ? 'bg-secondary' : item.status.includes('Critical') || item.status.includes('Low') ? 'bg-error' : 'bg-tertiary-container'}`} style={{ width: item.fill }}></div>
+                      </div>
                     </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-center">
-                  <span className="text-sm font-medium text-slate-600">2,400</span>
-                </td>
-                <td className="px-6 py-4 text-center">
-                  <span className="text-sm font-medium text-slate-600">2,412</span>
-                </td>
-                <td className="px-6 py-4">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-secondary-container text-on-secondary-container uppercase">Optimal Balance</span>
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <div className="flex justify-end gap-2">
-                    <button className="p-2 text-slate-400 hover:text-primary transition-colors hover:bg-primary/5 rounded">
-                      <span className="material-symbols-outlined text-lg">swap_horiz</span>
-                    </button>
-                    <button className="p-2 text-slate-400 hover:text-primary transition-colors hover:bg-primary/5 rounded">
-                      <span className="material-symbols-outlined text-lg">edit</span>
-                    </button>
-                  </div>
-                </td>
-              </tr>
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <span className="text-sm font-medium text-slate-600">{item.ny}</span>
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <span className={`text-sm font-medium ${item.status.includes('Critical') || item.status.includes('Low') ? 'text-error font-bold' : 'text-slate-600'}`}>{item.sf}</span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase ${item.status.includes('Optimal') ? 'bg-secondary-container text-on-secondary-container' : item.status.includes('Transit') ? 'bg-surface-container-high text-slate-500' : 'bg-error-container text-on-error-container'}`}>{item.status}</span>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex justify-end gap-2">
+                      <button className="p-2 text-slate-400 hover:text-primary transition-colors hover:bg-primary/5 rounded">
+                        <span className="material-symbols-outlined text-lg">swap_horiz</span>
+                      </button>
+                      <button className="p-2 text-slate-400 hover:text-primary transition-colors hover:bg-primary/5 rounded">
+                        <span className="material-symbols-outlined text-lg">edit</span>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
@@ -185,20 +163,15 @@ export function InventoryMatrix() {
             <span className="material-symbols-outlined text-primary text-lg">psychology</span>
           </div>
           <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full bg-error"></div>
-              <div className="flex-1">
-                <p className="text-xs font-bold text-slate-700">LT-8821-XP Priority Trigger</p>
-                <p className="text-[10px] text-slate-400">Projected stock-out: 72 hours</p>
+            {data.reorderIntel.map((item: any, i: number) => (
+              <div key={i} className="flex items-center gap-3">
+                <div className={`w-2 h-2 rounded-full ${i === 0 ? 'bg-error' : 'bg-tertiary-fixed-dim'}`}></div>
+                <div className="flex-1">
+                  <p className="text-xs font-bold text-slate-700">{item.sku} {i === 0 ? 'Priority Trigger' : 'Manual Check'}</p>
+                  <p className="text-[10px] text-slate-400">{item.issue}</p>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full bg-tertiary-fixed-dim"></div>
-              <div className="flex-1">
-                <p className="text-xs font-bold text-slate-700">RX-7720-DL Manual Check</p>
-                <p className="text-[10px] text-slate-400">Vendor delay anticipated</p>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
 
