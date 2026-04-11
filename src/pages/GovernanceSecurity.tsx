@@ -1,5 +1,18 @@
 
+import { useState, useEffect } from 'react';
+
 export function GovernanceSecurity() {
+  const [data, setData] = useState<any>(null);
+
+  useEffect(() => {
+    fetch('/api/system/governance')
+      .then(res => res.json())
+      .then(data => setData(data))
+      .catch(console.error);
+  }, []);
+
+  if (!data) return <div className="p-8 text-center text-slate-500">Loading Governance & Security...</div>;
+
   return (
     <div className="p-6 min-h-screen space-y-6 bg-surface">
       {/* Header & Breadcrumbs */}
@@ -281,30 +294,16 @@ export function GovernanceSecurity() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-surface-container-high/50">
-                  <tr className="hover:bg-slate-50 transition-colors">
-                    <td className="px-6 py-3 font-mono text-[10px] text-slate-500 tracking-tight">2023-10-24 14:22:01.004</td>
-                    <td className="px-6 py-3 text-xs font-bold text-sky-900">USR-842-AX</td>
-                    <td className="px-6 py-3"><span className="text-[9px] font-black px-2 py-1 bg-surface-container-high rounded text-slate-600 uppercase tracking-widest border border-outline-variant/10 shadow-sm">PATCH_CONFIG</span></td>
-                    <td className="px-6 py-3 text-[11px] text-slate-600 font-medium">Feature#183_LedgerSync</td>
-                    <td className="px-6 py-3 font-mono text-[10px] text-slate-400 tracking-tight">ae21...8f0b</td>
-                    <td className="px-6 py-3"><span className="material-symbols-outlined text-secondary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span></td>
+                {data.auditLogs.map((log: any, i: number) => (
+                  <tr key={i} className={`transition-colors ${log.status === 'warning' ? 'bg-error-container/10 hover:bg-error-container/20' : 'hover:bg-slate-50'}`}>
+                    <td className={`px-6 py-3 font-mono text-[10px] ${log.status === 'warning' ? 'text-error' : 'text-slate-500'} tracking-tight`}>{log.time}</td>
+                    <td className={`px-6 py-3 text-xs font-bold ${log.status === 'warning' ? 'text-error' : 'text-sky-900'}`}>{log.actor}</td>
+                    <td className="px-6 py-3"><span className={`text-[9px] font-black px-2 py-1 rounded uppercase tracking-widest shadow-sm border border-outline-variant/10 ${log.status === 'warning' ? 'bg-error text-white' : 'bg-surface-container-high text-slate-600'}`}>{log.op}</span></td>
+                    <td className={`px-6 py-3 text-[11px] font-medium ${log.status === 'warning' ? 'text-error font-bold' : 'text-slate-600'}`}>{log.target}</td>
+                    <td className="px-6 py-3 font-mono text-[10px] text-slate-400 tracking-tight">{Math.random().toString(36).substring(2,10)}</td>
+                    <td className="px-6 py-3"><span className={`material-symbols-outlined text-sm ${log.status === 'warning' ? 'text-error' : 'text-secondary'}`} style={{ fontVariationSettings: "'FILL' 1" }}>{log.status === 'warning' ? 'report' : 'verified'}</span></td>
                   </tr>
-                  <tr className="bg-error-container/10 hover:bg-error-container/20 transition-colors">
-                    <td className="px-6 py-3 font-mono text-[10px] text-error tracking-tight">2023-10-24 14:21:58.892</td>
-                    <td className="px-6 py-3 text-xs font-bold text-error">SYS-DAEMON-01</td>
-                    <td className="px-6 py-3"><span className="text-[9px] font-black px-2 py-1 bg-error text-white rounded uppercase tracking-widest shadow-sm">CIRCUIT_TRIP</span></td>
-                    <td className="px-6 py-3 text-[11px] text-error font-bold">API_GATEWAY_B</td>
-                    <td className="px-6 py-3 font-mono text-[10px] text-slate-400 tracking-tight">LOCAL_INTERNAL</td>
-                    <td className="px-6 py-3"><span className="material-symbols-outlined text-error text-sm">report</span></td>
-                  </tr>
-                  <tr className="hover:bg-slate-50 transition-colors">
-                    <td className="px-6 py-3 font-mono text-[10px] text-slate-500 tracking-tight">2023-10-24 14:21:55.421</td>
-                    <td className="px-6 py-3 text-xs font-bold text-sky-900">USR-102-BQ</td>
-                    <td className="px-6 py-3"><span className="text-[9px] font-black px-2 py-1 bg-surface-container-high rounded text-slate-600 uppercase tracking-widest border border-outline-variant/10 shadow-sm">AUTH_LOGIN</span></td>
-                    <td className="px-6 py-3 text-[11px] text-slate-600 font-medium">Terminal_GUI_v4</td>
-                    <td className="px-6 py-3 font-mono text-[10px] text-slate-400 tracking-tight">cc49...112e</td>
-                    <td className="px-6 py-3"><span className="material-symbols-outlined text-secondary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span></td>
-                  </tr>
+                ))}
                 </tbody>
               </table>
             </div>

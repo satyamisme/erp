@@ -1,18 +1,47 @@
-exports.getGovernanceData = (req, res) => {
-  res.json({
-    featureMatrix: [
-      { id: '#181', name: 'X-Region Proxy Handler', state: 'Enabled', sa: true, mgr: false, csh: true },
-      { id: '#182', name: 'Quantum Encrypt Node', state: 'Disabled', sa: true, mgr: true, csh: false },
-      { id: '#183', name: 'Bilateral Ledger Sync', state: 'Enabled', sa: true, mgr: false, csh: true },
-      { id: '#316', name: 'Neural Traffic Filter', state: 'Enabled', sa: true, mgr: true, csh: true },
-      { id: '#317', name: 'Deep Packet Inspect v2', state: 'Enabled', sa: true, mgr: false, csh: false }
-    ],
-    auditLogs: [
-      { time: '2023-10-24 14:22:01.004', actor: 'USR-842-AX', op: 'PATCH_CONFIG', target: 'Feature#183_LedgerSync', status: 'verified' },
-      { time: '2023-10-24 14:21:58.892', actor: 'SYS-DAEMON-01', op: 'CIRCUIT_TRIP', target: 'API_GATEWAY_B', status: 'warning' },
-      { time: '2023-10-24 14:21:55.421', actor: 'USR-102-BQ', op: 'AUTH_LOGIN', target: 'Terminal_GUI_v4', status: 'verified' }
-    ]
-  });
+const Feature = require('../models/Feature');
+
+exports.getGovernanceData = async (req, res) => {
+  try {
+    const features = await Feature.find({}).sort({ featureId: 1 });
+    res.json({
+      featureMatrix: features,
+      auditLogs: [
+        { time: new Date().toISOString(), actor: 'USR-842-AX', op: 'PATCH_CONFIG', target: 'Feature#183_LedgerSync', status: 'verified' },
+        { time: new Date().toISOString(), actor: 'SYS-DAEMON-01', op: 'CIRCUIT_TRIP', target: 'API_GATEWAY_B', status: 'warning' },
+        { time: new Date().toISOString(), actor: 'USR-102-BQ', op: 'AUTH_LOGIN', target: 'Terminal_GUI_v4', status: 'verified' }
+      ]
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch governance data' });
+  }
+};
+
+exports.updateFeature = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+
+    // Check for API keys if the feature requires one and is being enabled
+    if (updateData.enabled === true) {
+        const feature = await Feature.findOne({ featureId: id });
+        if (feature && feature.requiresApiKey) {
+            if (!process.env[feature.apiKeyName]) {
+                return res.status(400).json({
+                    error: `Missing API Key: ${feature.apiKeyName} is required to enable this feature.`
+                });
+            }
+        }
+    }
+
+    const updatedFeature = await Feature.findOneAndUpdate(
+      { featureId: id },
+      { $set: updateData },
+      { new: true }
+    );
+    res.json(updatedFeature);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update feature' });
+  }
 };
 
 exports.getSystemHealth = (req, res) => {
