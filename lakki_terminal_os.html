@@ -497,6 +497,7 @@
             const isHidden = forceState !== undefined ? !forceState : modal.classList.contains('pointer-events-none');
 
             if (isHidden) {
+                modal.style.display = 'flex';
                 modal.classList.remove('hide', 'pointer-events-none');
                 requestAnimationFrame(() => {
                     modal.classList.remove('opacity-0');
@@ -516,6 +517,7 @@
                 }
                 setTimeout(() => {
                     modal.classList.add('hide');
+                    modal.style.display = 'none';
                 }, 300);
             }
         }
@@ -1302,8 +1304,10 @@
             if (m) {
                 m.classList.add('hide', 'pointer-events-none', 'opacity-0');
                 m.classList.remove('opacity-100');
+                m.style.display = 'none';
             }
         });
+
         toggleDrawer('batch-job-drawer', false);
 
     </script>

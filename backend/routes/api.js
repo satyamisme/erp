@@ -30,6 +30,7 @@ router.get('/finance/z-report', financeController.getZReport);
 
 // Governance & Health
 router.get('/system/governance', systemController.getGovernanceData);
+router.patch('/system/feature/:id', systemController.updateFeature);
 router.get('/system/health', systemController.getSystemHealth);
 
 module.exports = router;
