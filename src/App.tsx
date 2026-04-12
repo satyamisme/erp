@@ -1,52 +1,51 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Layout } from './components/Layout';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { useUserStore } from './store/useUserStore';
+import { MainLayout } from './components/templates/MainLayout';
+import { Dashboard } from './pages/dashboard';
+import { POSCheckout } from './pages/pos';
 
-// Screens
-import { POSCheckout } from './pages/POSCheckout';
-import { ExecutiveCockpit } from './pages/ExecutiveCockpit';
-import { InventoryMatrix } from './pages/InventoryMatrix';
-import { BatchJobManager } from './pages/BatchJobManager';
-import { CommandPalette } from './pages/CommandPalette';
-import { RepairHub } from './pages/RepairHub';
-import { SecureLogin } from './pages/SecureLogin';
-import { Customer360 } from './pages/Customer360';
-import { InterStoreTransfer } from './pages/InterStoreTransfer';
-import { GovernanceSecurity } from './pages/GovernanceSecurity';
-import { SystemHealth } from './pages/SystemHealth';
-import { ZReportFinanceDashboard } from './pages/ZReportFinanceDashboard';
+const AuthPlaceholder = () => {
+    const login = useUserStore(s => s.login);
+    return (
+        <div className="flex flex-col items-center justify-center h-screen bg-surface-container gap-4">
+            <h1 className="text-3xl font-black text-primary">Terminal Auth</h1>
+            <button onClick={() => login('SA')} className="px-6 py-3 bg-primary text-white font-bold rounded">Login as Super Admin</button>
+        </div>
+    );
+};
+const FeatureStatus = () => <div className="p-8">Governance & Feature Matrix</div>;
+const Inventory = () => <div className="p-8">Inventory Management</div>;
+const Repairs = () => <div className="p-8">Repair Hub</div>;
+const Customers = () => <div className="p-8">CRM & Customer 360</div>;
+const Finance = () => <div className="p-8">Z-Report & Finance</div>;
+const Transfers = () => <div className="p-8">Inter-Store Transfers</div>;
+const Purchases = () => <div className="p-8">Supply Chain & Purchases</div>;
+
+const ProtectedRoute = () => {
+    const isAuth = useUserStore(s => s.isAuthenticated);
+    if (!isAuth) return <Navigate to="/login" replace />;
+    return <MainLayout />;
+};
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={<SecureLogin />} />
+        <Route path="/login" element={<AuthPlaceholder />} />
 
-        {/* Isolated routes for screens that define their own sidebars / layouts */}
-        <Route path="/finance" element={<ZReportFinanceDashboard />} />
+        <Route element={<ProtectedRoute />}>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/terminal" element={<POSCheckout />} />
+          <Route path="/inventory" element={<Inventory />} />
+          <Route path="/transfers" element={<Transfers />} />
+          <Route path="/purchases" element={<Purchases />} />
+          <Route path="/repairs" element={<Repairs />} />
+          <Route path="/customers" element={<Customers />} />
+          <Route path="/finance" element={<Finance />} />
+          <Route path="/governance" element={<FeatureStatus />} />
 
-        {/* Main App Layout Routes */}
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Navigate to="/pos" replace />} />
-
-          <Route path="pos" element={<POSCheckout />} />
-          <Route path="repair" element={<RepairHub />} />
-
-          <Route path="inventory">
-            <Route index element={<InventoryMatrix />} />
-            <Route path="transfer" element={<InterStoreTransfer />} />
-          </Route>
-
-          <Route path="governance" element={<GovernanceSecurity />} />
-
-          <Route path="crm">
-            <Route index element={<Customer360 />} />
-          </Route>
-
-          <Route path="health" element={<SystemHealth />} />
-
-          <Route path="executive" element={<ExecutiveCockpit />} />
-          <Route path="batch" element={<BatchJobManager />} />
-          <Route path="command" element={<CommandPalette />} />
+          <Route path="*" element={<div className="p-8">Page Not Found / Under Construction</div>} />
         </Route>
       </Routes>
     </BrowserRouter>
