@@ -2,10 +2,20 @@
 
 Lakki Terminal OS is a high-density, enterprise-grade Point of Sale (POS) and ERP system tailored for phone repair, retail, and omnichannel management. It features a complete architecture spanning 367 unique business functions across 7 distinct domains.
 
-## Architecture
-- **Frontend:** React, Vite, TypeScript, Tailwind CSS
-- **Backend:** Node.js, Express
-- **Database:** MongoDB (Mongoose)
+## Architecture (Atomic Design)
+The project strictly adheres to an atomic, scalable React structure:
+- `src/components/atoms`: Smallest UI building blocks (Buttons, Inputs, Spinners)
+- `src/components/molecules`: Combinations of atoms (Search bars, Data rows)
+- `src/components/organisms`: Complex functional UI pieces (Sidebar, Header, Tables)
+- `src/components/templates`: Layout wrappers
+- `src/pages`: Top-level route components
+- `src/store`: Zustand state management (User, Auth, Cart, Features)
+- `src/features`: Domain-specific business logic (React Query / custom hooks)
+
+**Tech Stack:**
+- Frontend: React 19, Vite, TypeScript, Tailwind CSS v3, Zustand
+- Backend: Node.js, Express
+- Database: MongoDB (Mongoose)
 
 ---
 
