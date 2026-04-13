@@ -17,16 +17,36 @@ export function SecureLogin() {
   const login = useUserStore(s => s.login);
   const navigate = useNavigate();
   const [role, setRole] = useState<'SA' | 'MGR' | 'CSH' | 'TECH' | 'INV' | 'AUD'>('SA');
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    login(role);
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // For the demo we simulate role login by passing the role as the operatorId
+        // In a real app we'd ask for an actual operator ID string.
+        body: JSON.stringify({ operatorId: role, accessKey: '1234' })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Login failed');
 
-    // Role-based routing
-    if (role === 'TECH') navigate('/repairs');
-    else if (role === 'INV') navigate('/inventory');
-    else if (role === 'SA' || role === 'MGR') navigate('/dashboard');
-    else navigate('/terminal');
+      login(data.user, data.token);
+
+      // Role-based routing
+      if (role === 'TECH') navigate('/repairs');
+      else if (role === 'INV') navigate('/inventory');
+      else if (role === 'SA' || role === 'MGR') navigate('/dashboard');
+      else navigate('/terminal');
+    } catch (err: any) { // eslint-disable-line
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -59,7 +79,7 @@ export function SecureLogin() {
                         <label className="text-[10px] font-bold text-outline uppercase tracking-wider pl-1">Operator Role (Demo)</label>
                         <select
                           value={role}
-                          onChange={(e) => setRole(e.target.value as any)}
+                          onChange={(e) => setRole(e.target.value as any)} // eslint-disable-line
                           className="w-full bg-surface-container hover:bg-surface-container-highest focus:bg-surface border-none ring-1 ring-outline-variant/20 focus:ring-2 focus:ring-primary/50 rounded-lg py-3 px-4 text-sm text-on-surface transition-all outline-none"
                         >
                             {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
@@ -75,6 +95,13 @@ export function SecureLogin() {
                     </div>
                 </div>
 
+                {error && (
+                  <div className="bg-error-container/50 p-3 rounded-lg flex items-start gap-3 border-l-2 border-error text-error">
+                    <span className="material-symbols-outlined text-sm mt-0.5">error</span>
+                    <p className="text-xs font-bold">{error}</p>
+                  </div>
+                )}
+
                 <div className="bg-surface-container-highest/50 p-3 rounded-lg flex items-start gap-3 border-l-2 border-primary">
                     <span className="material-symbols-outlined text-primary text-sm mt-0.5">shield_person</span>
                     <div>
@@ -83,9 +110,9 @@ export function SecureLogin() {
                     </div>
                 </div>
 
-                <Button type="submit" className="w-full group py-6 text-xs uppercase tracking-widest gap-2">
-                    INITIALIZE COCKPIT
-                    <span className="material-symbols-outlined text-lg group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                <Button type="submit" disabled={loading} className="w-full group py-6 text-xs uppercase tracking-widest gap-2">
+                    {loading ? 'AUTHENTICATING...' : 'INITIALIZE COCKPIT'}
+                    {!loading && <span className="material-symbols-outlined text-lg group-hover:translate-x-1 transition-transform">arrow_forward</span>}
                 </Button>
             </form>
         </main>

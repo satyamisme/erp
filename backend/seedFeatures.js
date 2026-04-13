@@ -362,6 +362,11 @@ const rawData = [
   { id: 350, name: 'Supplier minimum order quantity (MOQ) alert', domain: 'New Enterprise Features' }
 ];
 
+const User = require('./models/User');
+const Store = require('./models/Store');
+const Product = require('./models/Product');
+const Customer = require('./models/Customer');
+
 async function seed() {
   try {
     const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/lakki_terminal';
@@ -394,6 +399,78 @@ async function seed() {
 
     await Feature.insertMany(fullFeatures);
     console.log(`Successfully seeded ${fullFeatures.length} features.`);
+
+    // Clear other collections
+    await User.deleteMany({});
+    await Store.deleteMany({});
+    await Product.deleteMany({});
+    await Customer.deleteMany({});
+
+    // Seed Stores
+    const stores = await Store.insertMany([
+      { name: 'Downtown Terminal - T01', location: '450 Commerce Way, District 4' },
+      { name: 'North Plaza Station - T09', location: '92 Skyline Drive, North Sector' },
+      { name: 'Central Warehouse - W01', location: 'Industrial Area 5' }
+    ]);
+    console.log('Seeded 3 stores.');
+
+    // Seed Users
+    const bcrypt = require('bcryptjs');
+    const salt = await bcrypt.genSalt(10);
+    const hash = await bcrypt.hash('Admin123!', salt);
+    const pinHash = await bcrypt.hash('1234', salt);
+
+    const defaultAccessKeyHash = await bcrypt.hash('1234', salt);
+
+    await User.insertMany([
+      { email: 'admin@lakki.com', operatorId: 'OP-001', passwordHash: hash, accessKey: defaultAccessKeyHash, name: 'Super Admin', role: 'SA', homeStoreId: stores[0]._id, managerPinHash: pinHash },
+      { email: 'manager@lakki.com', operatorId: 'OP-002', passwordHash: hash, accessKey: defaultAccessKeyHash, name: 'Store Manager', role: 'MGR', homeStoreId: stores[0]._id, managerPinHash: pinHash },
+      { email: 'cashier@lakki.com', operatorId: 'OP-003', passwordHash: hash, accessKey: defaultAccessKeyHash, name: 'Cashier One', role: 'CSH', homeStoreId: stores[0]._id },
+      { email: 'tech@lakki.com', operatorId: 'OP-004', passwordHash: hash, accessKey: defaultAccessKeyHash, name: 'Tech Miller', role: 'TECH', homeStoreId: stores[0]._id },
+      { email: 'inv@lakki.com', operatorId: 'OP-005', passwordHash: hash, accessKey: defaultAccessKeyHash, name: 'Inventory Clerk', role: 'INV', homeStoreId: stores[2]._id },
+      { email: 'auditor@lakki.com', operatorId: 'OP-006', passwordHash: hash, accessKey: defaultAccessKeyHash, name: 'Security Auditor', role: 'AUD' }
+    ]);
+    console.log('Seeded 6 users.');
+
+    // Seed Products
+    const categories = ['Smartphones', 'Accessories', 'Wearables', 'Tablets'];
+    const images = [
+      'https://images.unsplash.com/photo-1592899677974-c46414c11fa0?auto=format&fit=crop&w=400&q=80',
+      'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?auto=format&fit=crop&w=400&q=80',
+      'https://images.unsplash.com/photo-1546868871-7041f2a55e12?auto=format&fit=crop&w=400&q=80',
+      'https://images.unsplash.com/photo-1561154464-82e9adf32764?auto=format&fit=crop&w=400&q=80'
+    ];
+
+    const products = Array.from({ length: 50 }, (_, i) => {
+      const category = categories[i % categories.length];
+      const imageUrl = images[i % images.length];
+      return {
+        sku: `SKU-${1000 + i}`,
+        name: `Device ${i % 2 === 0 ? 'Pro' : 'Standard'} Model ${String.fromCharCode(65 + (i % 26))}`,
+        price: Math.floor(Math.random() * 1000) + 50,
+        cost: Math.floor(Math.random() * 500) + 20,
+        category: category,
+        imageUrl: imageUrl,
+        stockByStore: stores.map(s => ({ storeId: s._id, quantity: Math.floor(Math.random() * 20), binLocation: `A-${i}` })),
+        requiresImei: i % 3 === 0,
+        sortPriority: i % 10 === 0 ? 1 : 0
+      };
+    });
+    await Product.insertMany(products);
+    console.log('Seeded 50 products.');
+
+    // Seed Customers
+    const customers = Array.from({ length: 10 }, (_, i) => ({
+      name: `Customer ${i}`,
+      phone: `+1555000${i.toString().padStart(4, '0')}`,
+      email: `customer${i}@example.com`,
+      loyaltyPoints: Math.floor(Math.random() * 5000),
+      tier: ['Silver', 'Gold', 'VIP'][i % 3],
+      credit: Math.floor(Math.random() * 100)
+    }));
+    await Customer.insertMany(customers);
+    console.log('Seeded 10 customers.');
+
     process.exit(0);
   } catch (err) {
     console.error('Error seeding features:', err);

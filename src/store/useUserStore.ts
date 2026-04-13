@@ -9,16 +9,19 @@ interface User {
 interface UserState {
   currentUser: User | null;
   isAuthenticated: boolean;
-  login: (role: User['role']) => void;
+  token: string | null;
+  login: (user: User, token: string) => void;
   logout: () => void;
 }
 
 export const useUserStore = create<UserState>((set) => ({
   currentUser: null,
   isAuthenticated: false,
-  login: (role) => set({
-    currentUser: { id: `USR-${Math.floor(Math.random() * 1000)}`, name: 'Demo User', role },
+  token: null,
+  login: (user, token) => set({
+    currentUser: user,
+    token,
     isAuthenticated: true
   }),
-  logout: () => set({ currentUser: null, isAuthenticated: false }),
+  logout: () => set({ currentUser: null, token: null, isAuthenticated: false }),
 }));
