@@ -1,3 +1,4 @@
+import { fetchWithAuth } from "../../lib/api";
 import { useState, useEffect } from 'react';
 
 interface Product {
@@ -13,20 +14,37 @@ interface Product {
 export function POSCheckout() {
   const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<(Product & { qty: number })[]>([]);
+  const [category, setCategory] = useState<string>('All Items');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Generate mock products for the POS
-    const mockProducts = Array.from({ length: 24 }, (_, i) => ({
-      _id: `SKU-${1000 + i}`,
-      sku: `SKU-${1000 + i}`,
-      name: `Device ${i % 2 === 0 ? 'Pro' : 'Standard'} Model ${i}`,
-      category: ['Phone', 'Tablet', 'Accessory'][i % 3],
-      price: Math.floor(Math.random() * 1000) + 50,
-      stock: Math.floor(Math.random() * 20),
-      imei: `35${Math.floor(Math.random() * 1000000000000)}`
-    }));
-    setProducts(mockProducts);
-  }, []);
+    const fetchProducts = async () => {
+      setLoading(true);
+      try {
+        const res = await fetchWithAuth(`http://localhost:5000/api/products?category=${category}`);
+        if (!res.ok) throw new Error('Failed to fetch');
+        const data = await res.json();
+
+        // Map backend products to the expected POS Product structure
+        const mappedProducts = data.map((p: any /* eslint-disable-line */) => ({
+          _id: p._id,
+          name: p.name,
+          sku: p.sku,
+          category: p.category,
+          price: p.price,
+          stock: p.totalStock || p.stockByStore?.reduce((acc: number, curr: any /* eslint-disable-line */) => acc + curr.quantity, 0) || Math.floor(0.5 * 20),
+          imei: p.requiresImei ? `35${Math.floor(Math.random() * 1000000000000)}` : 'N/A'
+        }));
+
+        setProducts(mappedProducts);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProducts();
+  }, [category]);
 
   const addToCart = (product: Product) => {
     if (product.stock <= 0) return alert('Out of stock');
@@ -50,11 +68,14 @@ export function POSCheckout() {
       {/* Products Grid */}
       <div className="flex-[2.5] bg-surface-container-lowest border border-outline-variant/20 rounded-xl flex flex-col shadow-sm overflow-hidden">
         <div className="p-3 bg-surface-container border-b border-outline-variant/20 flex gap-2 shrink-0">
-          <button className="px-4 py-1.5 bg-primary text-white rounded-full text-xs font-bold">All Items</button>
-          <button className="px-4 py-1.5 bg-surface text-on-surface-variant rounded-full text-xs font-bold border border-outline-variant/20">Phones</button>
+          <button onClick={() => setCategory('All Items')} className={`px-4 py-1.5 ${category === 'All Items' ? 'bg-primary text-white' : 'bg-surface text-on-surface-variant'} rounded-full text-xs font-bold`}>All Items</button>
+          <button onClick={() => setCategory('Smartphones')} className={`px-4 py-1.5 ${category === 'Smartphones' ? 'bg-primary text-white' : 'bg-surface text-on-surface-variant'} rounded-full text-xs font-bold border border-outline-variant/20`}>Smartphones</button>
+          <button onClick={() => setCategory('Accessories')} className={`px-4 py-1.5 ${category === 'Accessories' ? 'bg-primary text-white' : 'bg-surface text-on-surface-variant'} rounded-full text-xs font-bold border border-outline-variant/20`}>Accessories</button>
         </div>
         <div className="flex-1 overflow-y-auto p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {products.map(p => (
+          {loading ? (
+             <div className="col-span-full flex justify-center py-10"><span className="material-symbols-outlined animate-spin">refresh</span></div>
+          ) : products.map(p => (
             <div key={p._id} onClick={() => addToCart(p)} className="bg-surface border border-outline-variant/20 p-3 rounded-lg cursor-pointer hover:shadow-md transition-shadow group relative">
               <div className="flex justify-between items-start mb-2">
                 <span className="text-[10px] font-mono text-outline">{p.sku}</span>
